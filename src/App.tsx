@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import QRCode from "qrcode";
 import { Html5Qrcode } from "html5-qrcode";
+import html2pdf from "html2pdf.js";
 
 // Types
 interface MenuItem {
@@ -214,7 +215,7 @@ const TRANSLATIONS = {
     shopProfileTitle: "Shop Profile",
     shopName: "Shop Name",
     shopAddress: "Shop Address",
-    shopTaxId: "Tax ID",
+    shopLineId: "LINE ID (For Sharing)",
     pinPrompt: "Enter Manager PIN (Default '1234')",
     wrongPin: "Incorrect PIN!",
     managerModalTitle: "Manager Settings",
@@ -319,7 +320,7 @@ const TRANSLATIONS = {
     shopProfileTitle: "ข้อมูลร้านค้า",
     shopName: "ชื่อร้านค้า",
     shopAddress: "ที่อยู่ร้านค้า",
-    shopTaxId: "เลขประจำตัวผู้เสียภาษี",
+    shopLineId: "ไอดี LINE (สำหรับส่งยอด)",
     pinPrompt: "กรอก PIN ผู้จัดการ (ค่าเริ่มต้น '1234')",
     wrongPin: "รหัส PIN ไม่ถูกต้อง!",
     managerModalTitle: "จัดการระบบ (Manager)",
@@ -396,7 +397,7 @@ export default function App() {
   const [shopProfile, setShopProfile] = useState({
     name: "SlipPro Coffee",
     address: "123 Sukhumvit Rd, Bangkok",
-    taxId: "1234567890123"
+    lineId: ""
   });
   
   const [customShoppingList, setCustomShoppingList] = useState<string[]>([]);
@@ -447,7 +448,7 @@ export default function App() {
       const defaultProfile = {
         name: "SlipPro Coffee",
         address: "123 Sukhumvit Rd, Bangkok",
-        taxId: "1234567890123"
+        lineId: ""
       };
       setShopProfile(defaultProfile);
       localStorage.setItem("slippro_shop_profile_v1", JSON.stringify(defaultProfile));
@@ -712,7 +713,9 @@ export default function App() {
     localStorage.setItem("slippro_transactions_v1", JSON.stringify(updatedTransactions));
 
     // 5. Open line share scheme
-    const lineShareUrl = `https://line.me/R/share?text=${encodeURIComponent(message)}`;
+    const lineShareUrl = (shopProfile as any).lineId 
+      ? `https://line.me/R/oaMessage/${(shopProfile as any).lineId}/?${encodeURIComponent(message)}`
+      : `https://line.me/R/share?text=${encodeURIComponent(message)}`;
     
     // Clear cart and slip
     setCart([]);
@@ -752,7 +755,9 @@ export default function App() {
       });
     }
 
-    const lineShareUrl = `https://line.me/R/share?text=${encodeURIComponent(message)}`;
+    const lineShareUrl = (shopProfile as any).lineId 
+      ? `https://line.me/R/oaMessage/${(shopProfile as any).lineId}/?${encodeURIComponent(message)}`
+      : `https://line.me/R/share?text=${encodeURIComponent(message)}`;
     window.open(lineShareUrl, "_blank");
   };
 
@@ -938,7 +943,6 @@ export default function App() {
           <div>
             <h1 style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 0; letter-spacing: -0.03em; text-transform: uppercase;">${shopProfile.name}</h1>
             <p style="font-size: 13px; color: #475569; margin: 6px 0 0 0; max-width: 400px; font-weight: 500;">📍 ${shopProfile.address}</p>
-            <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0; font-family: monospace;">Tax ID / เลขประจำตัวผู้เสียภาษี: ${shopProfile.taxId}</p>
           </div>
           <div style="text-align: right;">
             <div style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Z-REPORT</div>
@@ -993,8 +997,8 @@ export default function App() {
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    if ((window as any).html2pdf) {
-      (window as any).html2pdf().from(element).set(opt).save().then(() => {
+    try {
+      html2pdf().from(element).set(opt).save().then(() => {
         setIsDownloadingPdf(false);
         triggerToast(lang === "en" ? "PDF Report Downloaded!" : "ดาวน์โหลดรายงานสำเร็จ!");
       }).catch((err: any) => {
@@ -1002,9 +1006,9 @@ export default function App() {
         setIsDownloadingPdf(false);
         triggerToast("PDF Export failed");
       });
-    } else {
+    } catch (error) {
       setIsDownloadingPdf(false);
-      triggerToast("PDF library not loaded");
+      triggerToast("PDF library error");
     }
   };
 
@@ -1150,7 +1154,7 @@ export default function App() {
               <h1 id="app-title" className="text-2xl font-black tracking-tighter text-slate-900 flex items-center gap-1.5 leading-none">
                 {t.appTitle}
                 <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded-full font-mono uppercase tracking-wider font-bold border border-slate-200">
-                  PWA v1
+                  PWA v3
                 </span>
               </h1>
               <p className="text-[10px] text-slate-400 font-sans tracking-wide mt-0.5">
@@ -1627,13 +1631,22 @@ export default function App() {
                                 <ImageIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
                                 <span>View Captured Slip</span>
                               </summary>
-                              <div className="mt-3 rounded-xl overflow-hidden bg-white max-w-[240px] shadow-sm border border-slate-200">
+                              <div 
+                                className="mt-3 rounded-xl overflow-hidden bg-white max-w-[240px] shadow-sm border border-slate-200 cursor-zoom-in group/history-img relative"
+                                onClick={() => setFullScreenImage(tx.slipThumbnail)}
+                              >
                                 <img
                                   src={tx.slipThumbnail}
                                   alt="Captured receipt attachment"
-                                  className="w-full object-contain aspect-square"
+                                  className="w-full object-contain aspect-square group-hover/history-img:scale-[1.02] transition-transform"
                                   referrerPolicy="no-referrer"
                                 />
+                                <div className="absolute inset-0 bg-black/0 group-hover/history-img:bg-black/20 transition-colors flex items-center justify-center">
+                                  <span className="text-white text-xs font-bold bg-black/60 px-2 py-1 rounded-lg opacity-0 group-hover/history-img:opacity-100 transition-opacity flex items-center gap-1">
+                                    <ImageIcon className="w-3 h-3" />
+                                    <span>View</span>
+                                  </span>
+                                </div>
                               </div>
                             </details>
                           </div>
@@ -1683,10 +1696,6 @@ export default function App() {
                       </span>
                       <h3 className="text-lg font-black tracking-tight">{shopProfile.name}</h3>
                       <p className="text-[10px] text-slate-400 font-medium line-clamp-1">📍 {shopProfile.address}</p>
-                    </div>
-                    <div className="text-right font-mono text-[9px] text-slate-400">
-                      <span className="block font-bold text-slate-300">TAX ID:</span>
-                      <span>{shopProfile.taxId}</span>
                     </div>
                   </div>
 
@@ -2165,13 +2174,13 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">{t.shopTaxId}</label>
+                      <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">{(t as any).shopLineId || "LINE ID"}</label>
                       <input
                         type="text"
-                        value={shopProfile.taxId}
-                        onChange={(e) => setShopProfile({...shopProfile, taxId: e.target.value})}
+                        value={(shopProfile as any).lineId || ""}
+                        onChange={(e) => setShopProfile({...shopProfile, lineId: e.target.value})}
+                        placeholder="@shopname"
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-slate-900 bg-slate-50 focus:bg-white transition-all"
-                        required
                       />
                     </div>
                     <button

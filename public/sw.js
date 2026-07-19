@@ -1,4 +1,4 @@
-const CACHE_NAME = 'slippro-cache-v6';
+const CACHE_NAME = 'slippro-cache-v8';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -57,4 +57,10 @@ self.addEventListener('fetch', (event) => {
       });
     })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
