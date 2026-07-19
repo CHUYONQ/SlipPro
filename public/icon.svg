@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="120" fill="#fde68a" />
+  
+  <!-- Shop Base -->
+  <path d="M120 380 V220 H392 V380" fill="#f87171" />
+  <path d="M100 380 H412 V400 C412 411 403 420 392 420 H120 C109 420 100 411 100 400 Z" fill="#b91c1c" />
+
+  <!-- Awning -->
+  <path d="M90 220 L130 140 H382 L422 220 Z" fill="#38bdf8" />
+  <path d="M90 220 A33.2 33.2 0 0 0 156.4 220 A33.2 33.2 0 0 0 222.8 220 A33.2 33.2 0 0 0 289.2 220 A33.2 33.2 0 0 0 355.6 220 A33.2 33.2 0 0 0 422 220" fill="#e0f2fe" stroke="#38bdf8" stroke-width="20" stroke-linecap="round" />
+  
+  <!-- Shop Door & Window -->
+  <rect x="236" y="270" width="80" height="110" rx="10" fill="#fef08a" />
+  <circle cx="300" cy="325" r="6" fill="#f59e0b" />
+  
+  <rect x="150" y="270" width="60" height="60" rx="8" fill="#bae6fd" />
+  
+  <!-- Cute Face on the Shop -->
+  <circle cx="165" cy="300" r="6" fill="#0f172a" />
+  <circle cx="195" cy="300" r="6" fill="#0f172a" />
+  <path d="M175 310 Q180 315 185 310" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round" />
+  <circle cx="158" cy="305" r="4" fill="#f43f5e" opacity="0.6" />
+  <circle cx="202" cy="305" r="4" fill="#f43f5e" opacity="0.6" />
+</svg>
